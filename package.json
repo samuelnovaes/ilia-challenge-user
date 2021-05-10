@@ -5,7 +5,7 @@
 	"main": "server.js",
 	"scripts": {
 		"start": "cross-env NODE_ENV=production node src/server.js",
-		"dev": "npm run lint && cross-env NODE_ENV=development nodemon src/server.js",
+		"dev": "npm run lint && cross-env NODE_ENV=development nodemon --inspect=9002 src/server.js",
 		"test": "npm run lint && jest __tests__/test.spec.js",
 		"lint": "eslint ."
 	},

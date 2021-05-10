@@ -1,4 +1,4 @@
-const { Kafka } = require('kafkajs');
+const { Kafka, CompressionTypes } = require('kafkajs');
 const { nanoid } = require('nanoid');
 const { EventEmitter } = require('events');
 const CustomError = require('../src/utils/customError');
@@ -26,20 +26,24 @@ const connect = async () => {
 	await consumer.subscribe({ topic: 'function-response' });
 	await consumer.subscribe({ topic: 'function-error' });
 	await consumer.run({
+		autoCommit: true,
 		async eachMessage({ topic, message }) {
-			if (topic == 'function-request') {
-				const json = JSON.parse(message.value);
-				if (json.api == clientId) {
+			const json = JSON.parse(message.value);
+			if (json.api == clientId) {
+				if (topic == 'function-request') {
 					const func = controllers[json.controller][json.message];
 					try {
 						const response = await func(...json.args);
 						producer.send({
 							topic: 'function-response',
+							compression: CompressionTypes.GZIP,
 							messages: [
 								{
 									value: JSON.stringify({
 										id: json.id,
-										response
+										response,
+										from: clientId,
+										api: json.from
 									})
 								}
 							]
@@ -48,26 +52,29 @@ const connect = async () => {
 					catch (error) {
 						producer.send({
 							topic: 'function-error',
+							compression: CompressionTypes.GZIP,
 							messages: [
 								{
 									value: JSON.stringify({
 										id: json.id,
 										error: error.message,
-										code: error.code || 500
+										code: error.code || 500,
+										from: clientId,
+										api: json.from
 									})
 								}
 							]
 						});
 					}
 				}
-			}
-			else if (topic == 'function-response') {
-				const json = JSON.parse(message.value);
-				emitter.emit(`response@${json.id}`, json.response);
-			}
-			else if (topic == 'function-error') {
-				const json = JSON.parse(message.value);
-				emitter.emit(`error@${json.id}`, json.error, json.code);
+				else if (topic == 'function-response') {
+					const json = JSON.parse(message.value);
+					emitter.emit(`response@${json.id}`, json.response);
+				}
+				else if (topic == 'function-error') {
+					const json = JSON.parse(message.value);
+					emitter.emit(`error@${json.id}`, json.error, json.code);
+				}
 			}
 		}
 	});
@@ -78,6 +85,7 @@ const call = (api, controller, message, ...args) => {
 		const id = nanoid();
 		producer.send({
 			topic: 'function-request',
+			compression: CompressionTypes.GZIP,
 			messages: [
 				{
 					value: JSON.stringify({
@@ -85,7 +93,8 @@ const call = (api, controller, message, ...args) => {
 						api,
 						controller,
 						message,
-						args
+						args,
+						from: clientId
 					})
 				}
 			]
