@@ -121,6 +121,32 @@ class UserController {
 		}
 	}
 
+	async validateToken(authorization) {
+		if(!authorization) {
+			throw new CustomError('The access token is required', 401);
+		}
+		const token = authorization.replace(/^bearer (.*)$/i, '$1');
+
+		//Get token payload
+		let payload = null;
+		try {
+			payload = await promisify(jwt.verify)(token, process.env.PRIVATE_KEY);
+		}
+		catch(error) {
+			throw new CustomError('Invalid access token');
+		}
+
+		//Check if user exists
+		const user = await User.findOne({
+			_id: payload._id
+		});
+		if(!user) {
+			throw new CustomError('User not found', 401);
+		}
+		
+		return payload._id;
+	}
+
 }
 
 module.exports = new UserController();

@@ -6,29 +6,30 @@ const mongoose = require('mongoose');
 
 const userControllerTests = require('./controllers/user.controller.test');
 const userRouteTests = require('./routes/user.route.test');
+const { connect, disconnect } = require('../src/kafka');
 
 const setupMongooseConnection = () => {
 	beforeAll((done) => {
-		//Start mongoose connection
 		mongoose.connect(process.env.MONGO_URL, {
 			useNewUrlParser: true,
 			useUnifiedTopology: true,
 			useCreateIndex: true,
+			useFindAndModify: false,
 			authSource: 'admin'
 		});
-		mongoose.connection.once('open', done);
-	});
-
+		mongoose.connection.once('open', async () => {
+			await connect();
+			done();
+		});
+	}, 120000);
 	afterAll(async () => {
-		//Drop all collections
 		const collections = await mongoose.connection.db.collections();
 		for(const collection of collections) {
 			await collection.drop();
 		}
-	
-		//Disconnect the database
 		mongoose.connection.close();
-	});
+		await disconnect();
+	}, 120000);
 };
 
 describe('User controller', () => {

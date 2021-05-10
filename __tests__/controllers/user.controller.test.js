@@ -1,5 +1,7 @@
 const userController = require('../../src/controllers/user.controller');
 const { isValidObjectId } = require('mongoose');
+const jwt = require('jsonwebtoken');
+const { promisify } = require('util');
 
 module.exports = () => {
 	let user = null;
@@ -37,5 +39,11 @@ module.exports = () => {
 		const userInfo = await userController.getUserInfo(user._id);
 		expect(isValidObjectId(userInfo._id)).toBe(true);
 		expect(userInfo.firstName).toBe('Foo');
+	});
+
+	it('Validate token', async () => {
+		const token = await promisify(jwt.sign)({ _id: user._id }, process.env.PRIVATE_KEY);
+		const userId = await userController.validateToken(`Bearer ${token}`);
+		expect(isValidObjectId(userId)).toBe(true);
 	});
 };
