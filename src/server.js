@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const mongoose = require('mongoose');
+const userController = require('./controllers/user.controller');
 const app = require('./app');
 
 const port = process.env.PORT || 3002;
@@ -14,7 +15,10 @@ mongoose.connect(process.env.MONGO_URL, {
 
 const db = mongoose.connection;
 
-db.once('open', () => {
+db.once('open', async () => {
+	if(process.env.NODE_ENV == 'development') {
+		await userController.createMockUsers();
+	}
 	app.listen(port, () => {
 		console.log('User service running on port', port);
 	});

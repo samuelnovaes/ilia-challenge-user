@@ -73,12 +73,12 @@ class UserController {
 		const user = await User.findOne({
 			username
 		});
-		if(!user) {
+		if (!user) {
 			throw new CustomError('User not found! Try using another usename.', 401);
 		}
 
 		//Verify the given password
-		if(!(await bcrypt.compare(password, user.password))) {
+		if (!(await bcrypt.compare(password, user.password))) {
 			throw new CustomError('Wrong password', 401);
 		}
 
@@ -92,10 +92,33 @@ class UserController {
 		const user = await User.findOne({
 			_id
 		});
-		if(!user) {
+		if (!user) {
 			throw new CustomError('User not found', 404);
 		}
 		return user;
+	}
+
+	async createMockUsers() {
+		try {
+			console.log('Creating mock users');
+			await this.register({
+				username: 'usertesta',
+				email: 'user.test.a@gmail.com',
+				firstName: 'User',
+				lastName: 'A',
+				password: 'iliachallenge'
+			});
+			await this.register({
+				username: 'usertestb',
+				email: 'user.test.b@gmail.com',
+				firstName: 'User',
+				lastName: 'B',
+				password: 'iliachallenge'
+			});
+		}
+		catch(error) {
+			console.log('Mock users already registered');
+		}
 	}
 
 }
