@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
 
-const userSchema = new mongoose.Schema({
+const walletSchema = new mongoose.Schema({
 	username: String,
 	email: String,
 	firstName: String,
@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
 	password: String
 }, { timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } });
 
-userSchema.statics.joiValidate = (body, field = null) => {
+walletSchema.statics.joiValidate = (body, field = null) => {
 	const keys = {
 		username: Joi.string().alphanum().min(6).required().label('Username'),
 		email: Joi.string().email().required().label('Email'),
@@ -23,4 +23,4 @@ userSchema.statics.joiValidate = (body, field = null) => {
 	});
 };
 
-module.exports = mongoose.model('user', userSchema);
+module.exports = mongoose.model('user', walletSchema);
